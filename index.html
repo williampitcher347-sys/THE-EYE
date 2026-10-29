@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>THE EYE // Sovereign Oversight & Secure Terminal</title>
+
+  <!-- Firebase v9 Compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <style>
+    :root {
+      --bg-core: #000000;
+      --bg-surface: #080808;
+      --bg-card: #121212;
+      --bg-input: #030303;
+      --text-main: #f3f4f6;
+      --text-muted: #737373;
+      --border-subtle: rgba(255, 255, 255, 0.12);
+      --border-active: rgba(255, 255, 255, 0.5);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; user-select: none; }
+    body { background-color: var(--bg-core); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; }
+
+    /* BOOT SCREEN */
+    #boot-screen {
+      position: fixed; inset: 0; background: #000000; z-index: 999999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      transition: opacity 0.6s ease, visibility 0.6s ease;
+    }
+    .boot-logo { font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #fff; text-shadow: 0 0 15px rgba(255,255,255,0.4); }
+    .boot-sub { font-size: 11px; letter-spacing: 3px; color: var(--text-muted); margin-top: 8px; text-transform: uppercase; }
+    .boot-bar { width: 280px; height: 2px; background: #262626; margin-top: 28px; position: relative; overflow: hidden; }
+    .boot-fill { position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: #ffffff; transition: width 0.3s ease; }
+
+    /* PASSCODE GATE */
+    #passcode-gate {
+      position: fixed; inset: 0; background: #000000; z-index: 99999;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .gate-card {
+      background: var(--bg-surface); width: 420px; padding: 36px; border-radius: 4px;
+      border: 1px solid var(--border-subtle); box-shadow: 0 0 30px rgba(0,0,0,0.9);
+      display: flex; flex-direction: column; gap: 18px; text-align: center;
+    }
+    .gate-card h2 { font-size: 18px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+    .gate-card p { font-size: 12px; color: var(--text-muted); }
+    .gate-input { background: var(--bg-input); border: 1px solid var(--border-subtle); padding: 12px; border-radius: 2px; color: #fff; font-size: 16px; text-align: center; outline: none; letter-spacing: 3px; }
+    .gate-input:focus { border-color: #fff; }
+    .gate-btn { background: #fff; color: #000; border: none; padding: 12px; border-radius: 2px; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-size: 12px; }
+
+    /* DASHBOARD LAYOUT */
+    .dashboard-layout { display: flex; width: 100vw; height: 100vh; }
+    
+    /* SIDEBAR */
+    .nav-sidebar { width: 260px; background: var(--bg-surface); border-right: 1px solid var(--border-subtle); display: flex; flex-direction: column; padding: 20px 12px; gap: 12px; flex-shrink: 0; }
+    .nav-header { font-size: 14px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; padding: 0 8px; letter-spacing: 1px; }
+    .nav-menu { display: flex; flex-direction: column; gap: 4px; }
+    .nav-btn { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 2px; color: var(--text-muted); cursor: pointer; font-size: 12px; font-weight: 600; border: 1px solid transparent; transition: all 0.15s; letter-spacing: 0.5px; }
+    .nav-btn:hover, .nav-btn.active { background: var(--bg-card); color: #fff; border-color: var(--border-subtle); }
+    .nav-btn.active { color: #fff; border-left: 2px solid #fff; background: var(--bg-card); }
+
+    /* VIEWPORT */
+    .main-viewport { flex: 1; background: var(--bg-core); display: flex; flex-direction: column; overflow: hidden; }
+    .viewport-header { height: 56px; padding: 0 24px; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; background: var(--bg-surface); }
+    .viewport-title { font-size: 14px; font-weight: 700; color: #fff; letter-spacing: 1px; text-transform: uppercase; }
+
+    .content-section { display: none; flex: 1; padding: 24px; overflow-y: auto; flex-direction: column; gap: 16px; }
+    .content-section.active { display: flex; }
+
+    .panel-card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+    .panel-card h3 { font-size: 13px; color: #fff; font-weight: 700; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* CHAT BOX */
+    .chat-box { flex: 1; background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: 2px; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; min-height: 280px; }
+    .chat-msg { display: flex; flex-direction: column; gap: 2px; background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 2px; border: 1px solid rgba(255,255,255,0.05); }
+    .chat-author { font-weight: 600; font-size: 11px; color: #fff; display: flex; justify-content: space-between; }
+
+    /* INPUTS & BUTTONS */
+    input[type="text"], textarea, select { background: var(--bg-input); border: 1px solid var(--border-subtle); padding: 10px 12px; border-radius: 2px; color: #fff; outline: none; font-size: 12px; }
+    input:focus, select:focus { border-color: #fff; }
+    .btn-action { background: #fff; color: #000; border: none; padding: 9px 16px; border-radius: 2px; font-weight: 700; cursor: pointer; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+    .btn-action:hover { opacity: 0.85; }
+    .btn-danger { background: transparent; color: #fff; border: 1px solid #fff; padding: 8px 14px; border-radius: 2px; font-weight: 700; cursor: pointer; font-size: 11px; text-transform: uppercase; }
+    .btn-danger:hover { background: #fff; color: #000; }
+
+    /* DATA ROWS */
+    .data-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: 2px; font-size: 12px; }
+    .admin-id-tag { font-size: 10px; background: #262626; color: #a3a3a3; padding: 2px 6px; border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+  <!-- BOOT SCREEN -->
+  <div id="boot-screen">
+    <div class="boot-logo">THE EYE</div>
+    <div class="boot-sub">Secure Oversight Terminal v13.0</div>
+    <div class="boot-bar"><div class="boot-fill" id="boot-fill"></div></div>
+  </div>
+
+  <!-- PASSCODE GATE -->
+  <div id="passcode-gate" style="display: none;">
+    <div class="gate-card">
+      <h2>THE EYE // ACCESS GATE</h2>
+      <p>Enter Master Sovereign Passcode</p>
+      <input type="password" id="gate-passcode-input" class="gate-input" placeholder="••••" onkeydown="if(event.key==='Enter')unlockTerminal()">
+      <button class="gate-btn" onclick="unlockTerminal()">Initialize Terminal</button>
+    </div>
+  </div>
+
+  <div class="dashboard-layout">
+    
+    <!-- SIDEBAR -->
+    <div class="nav-sidebar">
+      <div class="nav-header">
+        <span>👁️</span>
+        <span>THE EYE // CORE</span>
+      </div>
+      <div class="nav-menu">
+        <div class="nav-btn active" onclick="switchSection('admin-chat')">💬 Secure Staff Dispatch</div>
+        <div class="nav-btn" onclick="switchSection('user-governance')">👥 User Roster & Insta-Ban</div>
+        <div class="nav-btn" onclick="switchSection('appeals-center')">⚖️ Appeals & Ban Queue</div>
+        <div class="nav-btn" onclick="switchSection('manual-ban')">🔨 Direct Ban Terminal</div>
+        <div class="nav-btn" onclick="switchSection('audit-logs')">📜 Immutable Audit Trail</div>
+        <div class="nav-btn" onclick="switchSection('announcer')">📢 System Announcements</div>
+      </div>
+    </div>
+
+    <!-- MAIN VIEWPORT -->
+    <div class="main-viewport">
+      <div class="viewport-header">
+        <span class="viewport-title" id="viewport-title-text">Secure Staff Dispatch</span>
+        <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;" id="current-admin-indicator">Admin ID: [Initializing...]</span>
+      </div>
+
+      <!-- 1. STAFF DISPATCH -->
+      <div class="content-section active" id="sec-admin-chat">
+        <div class="panel-card" style="flex: 1;">
+          <h3>Encrypted Staff Communication Feed</h3>
+          <div class="chat-box" id="admin-chat-messages"></div>
+          <div style="display: flex; gap: 10px; margin-top: 6px;">
+            <input type="text" id="admin-chat-input" placeholder="Type staff transmission..." style="flex: 1;" onkeydown="if(event.key==='Enter')sendAdminChat()">
+            <button class="btn-action" onclick="sendAdminChat()">Transmit</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. USER ROSTER & INSTA-BAN (NO PASSWORDS EXPOSED) -->
+      <div class="content-section" id="sec-user-governance">
+        <div class="panel-card">
+          <h3>Active User Roster & Insta-Ban Engine</h3>
+          <p style="font-size: 12px; color: var(--text-muted);">Securely oversee user accounts without credential exposure. Instantly revoke access in real-time.</p>
+          <div id="admin-users-list" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;"></div>
+        </div>
+      </div>
+
+      <!-- 3. APPEALS & BAN QUEUE -->
+      <div class="content-section" id="sec-appeals-center">
+        <div class="panel-card">
+          <h3>Suspended User Appeals Center</h3>
+          <p style="font-size: 12px; color: var(--text-muted);">Review incoming suspension appeals submitted by banned users through the appeal portal.</p>
+          <div id="appeals-queue-list" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;"></div>
+        </div>
+      </div>
+
+      <!-- 4. DIRECT BAN TERMINAL -->
+      <div class="content-section" id="sec-manual-ban">
+        <div class="panel-card">
+          <h3>Direct Ban Execution Terminal</h3>
+          <p style="font-size: 12px; color: var(--text-muted);">Manually ban any user by specifying their exact username or identifier.</p>
+          <div style="display: flex; flex-direction: column; gap: 12px; max-width: 400px; margin-top: 6px;">
+            <input type="text" id="manual-ban-username" placeholder="Target Username">
+            <textarea id="manual-ban-reason" placeholder="Suspension Reason..." style="height: 80px;"></textarea>
+            <button class="btn-danger" onclick="executeManualBan()">Execute Direct Ban</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. AUDIT TRAILS -->
+      <div class="content-section" id="sec-audit-logs">
+        <div class="panel-card">
+          <h3>Immutable Action Audit Trail</h3>
+          <div id="audit-logs-list" class="chat-box" style="min-height: 320px;"></div>
+        </div>
+      </div>
+
+      <!-- 6. ANNOUNCEMENTS -->
+      <div class="content-section" id="sec-announcer">
+        <div class="panel-card">
+          <h3>Global System Notification Banner</h3>
+          <input type="text" id="broadcast-input" placeholder="System notification text...">
+          <div style="display: flex; gap: 10px;">
+            <button class="btn-action" onclick="sendBroadcast()">Deploy Banner</button>
+            <button class="btn-danger" onclick="clearBroadcast()">Clear Banner</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAiAKJfmtdX61DzyWnCTViMkIbo08vAAUY",
+      authDomain: "dscrd-v1.firebaseapp.com",
+      databaseURL: "https://dscrd-v1-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "dscrd-v1",
+      storageBucket: "dscrd-v1.firebasestorage.app",
+      messagingSenderId: "328534181368",
+      appId: "1:328534181368:web:5b65d84358b4c2b950020d"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let currentAdminId = null;
+    let currentAdminName = "Operator";
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const fill = document.getElementById('boot-fill');
+      setTimeout(() => { fill.style.width = '40%'; }, 200);
+      setTimeout(() => { fill.style.width = '80%'; }, 450);
+      setTimeout(() => { fill.style.width = '100%'; }, 700);
+
+      setTimeout(() => {
+        const boot = document.getElementById('boot-screen');
+        boot.style.opacity = '0';
+        setTimeout(() => {
+          boot.style.display = 'none';
+          document.getElementById('passcode-gate').style.display = 'flex';
+        }, 600);
+      }, 950);
+    });
+
+    function unlockTerminal() {
+      const code = document.getElementById('gate-passcode-input').value.trim();
+      if (code === '9999' || code === 'EYE101') {
+        document.getElementById('passcode-gate').style.display = 'none';
+        
+        let storedId = localStorage.getItem('eye_admin_id');
+        if (!storedId) {
+          storedId = "EYE-ADM-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+          localStorage.setItem('eye_admin_id', storedId);
+        }
+        currentAdminId = storedId;
+        currentAdminName = prompt("Enter your Administrator Callsign:", "Supervisor") || "Operator";
+
+        document.getElementById('current-admin-indicator').innerText = `ID: ${currentAdminId} (${currentAdminName})`;
+        
+        db.ref(`eye_admins/${currentAdminId}`).set({
+          name: currentAdminName,
+          lastActive: Date.now(),
+          isBlacklisted: false
+        });
+
+        initTerminal();
+      } else {
+        alert("Access Denied.");
+      }
+    }
+
+    function initTerminal() {
+      loadAdminChat();
+      loadAuditLogs();
+      loadUsers();
+      loadAppeals();
+    }
+
+    function switchSection(secId) {
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+      
+      event.currentTarget.classList.add('active');
+      document.getElementById(`sec-${secId}`).classList.add('active');
+      document.getElementById('viewport-title-text').innerText = event.currentTarget.innerText.replace(/^[^\s]+\s/, '');
+    }
+
+    function logAction(actionDescription) {
+      db.ref('eye_audit_logs').push().set({
+        adminId: currentAdminId,
+        adminName: currentAdminName,
+        action: actionDescription,
+        timestamp: Date.now()
+      });
+    }
+
+    function loadAdminChat() {
+      const box = document.getElementById('admin-chat-messages');
+      db.ref('eye_staff_chat/messages').on('value', snap => {
+        box.innerHTML = '';
+        snap.forEach(c => {
+          const m = c.val();
+          const time = new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const div = document.createElement('div');
+          div.className = 'chat-msg';
+          div.innerHTML = `
+            <div class="chat-author"><span>${escapeHTML(m.sender)} <span class="admin-id-tag">${escapeHTML(m.adminId || 'SYS')}</span></span><span style="color:var(--text-muted);">${time}</span></div>
+            <div style="font-size:12px;">${escapeHTML(m.text)}</div>
+          `;
+          box.appendChild(div);
+        });
+        box.scrollTop = box.scrollHeight;
+      });
+    }
+
+    function sendAdminChat() {
+      const input = document.getElementById('admin-chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      db.ref('eye_staff_chat/messages').push().set({
+        sender: currentAdminName,
+        adminId: currentAdminId,
+        text: text,
+        timestamp: Date.now()
+      });
+      input.value = '';
+    }
+
+    function loadAuditLogs() {
+      const box = document.getElementById('audit-logs-list');
+      db.ref('eye_audit_logs').limitToLast(50).on('value', snap => {
+        box.innerHTML = '';
+        snap.forEach(c => {
+          const log = c.val();
+          const time = new Date(log.timestamp).toLocaleTimeString();
+          const div = document.createElement('div');
+          div.style.cssText = 'padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:11px;';
+          div.innerHTML = `<span style="color:var(--text-muted);">[${time}]</span> <strong style="color:#fff;">${escapeHTML(log.adminName)}</strong> <span class="admin-id-tag">${escapeHTML(log.adminId)}</span>: ${escapeHTML(log.action)}`;
+          box.appendChild(div);
+        });
+        box.scrollTop = box.scrollHeight;
+      });
+    }
+
+    // USER ROSTER & SECURE INSTA-BAN
+    function loadUsers() {
+      const list = document.getElementById('admin-users-list');
+      db.ref('users').on('value', snap => {
+        list.innerHTML = '';
+        if (!snap.exists()) {
+          list.innerHTML = '<div style="color:var(--text-muted); font-size:12px;">No active users found.</div>';
+          return;
+        }
+        snap.forEach(c => {
+          const u = c.val();
+          const uid = c.key;
+          const row = document.createElement('div');
+          row.className = 'data-row';
+          row.innerHTML = `
+            <div>
+              <strong>${escapeHTML(u.name || 'Anonymous')}</strong> 
+              ${u.isBanned ? '<span style="color:#ef4444; margin-left:6px;">[SUSPENDED]</span>' : ''}
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button class="btn-danger" onclick="instaBanUser('${uid}', '${escapeHTML(u.name)}')">${u.isBanned ? 'Lift Suspension' : 'INSTA-BAN'}</button>
+            </div>
+          `;
+          list.appendChild(row);
+        });
+      });
+    }
+
+    function instaBanUser(uid, uname) {
+      db.ref(`users/${uid}`).once('value', snap => {
+        const u = snap.val();
+        const currentStatus = u ? u.isBanned : false;
+        const newStatus = !currentStatus;
+
+        db.ref(`users/${uid}`).update({
+          isBanned: newStatus,
+          kickSignal: newStatus ? Date.now() : null
+        });
+
+        if (newStatus) {
+          logAction(`EXECUTE INSTA-BAN on user ${uname} (UID: ${uid})`);
+          alert(`INSTA-BAN executed for ${uname}. Live disconnect signal dispatched.`);
+        } else {
+          logAction(`Lifted suspension for user ${uname} (UID: ${uid})`);
+          alert(`Suspension lifted for ${uname}.`);
+        }
+      });
+    }
+
+    // MANUAL BAN
+    function executeManualBan() {
+      const username = document.getElementById('manual-ban-username').value.trim();
+      const reason = document.getElementById('manual-ban-reason').value.trim();
+      if (!username) return alert("Enter target username.");
+
+      db.ref('users').once('value', snap => {
+        let found = false;
+        snap.forEach(c => {
+          const u = c.val();
+          if (u.name.toLowerCase() === username.toLowerCase()) {
+            found = true;
+            db.ref(`users/${c.key}`).update({
+              isBanned: true,
+              banReason: reason || 'Violation of terms',
+              kickSignal: Date.now()
+            });
+            logAction(`Direct Ban executed on username '${username}' | Reason: ${reason}`);
+          }
+        });
+
+        if (found) {
+          alert(`User '${username}' has been banned and disconnected.`);
+          document.getElementById('manual-ban-username').value = '';
+          document.getElementById('manual-ban-reason').value = '';
+        } else {
+          alert(`User '${username}' not found in database.`);
+        }
+      });
+    }
+
+    // APPEALS CENTER QUEUE
+    function loadAppeals() {
+      const queueList = document.getElementById('appeals-queue-list');
+      db.ref('ban_appeals').on('value', snap => {
+        queueList.innerHTML = '';
+        if (!snap.exists()) {
+          queueList.innerHTML = '<div style="color:var(--text-muted); font-size:12px;">No pending ban appeals submitted.</div>';
+          return;
+        }
+        snap.forEach(c => {
+          const appeal = c.val();
+          const appealKey = c.key;
+          const time = new Date(appeal.timestamp).toLocaleTimeString();
+          const row = document.createElement('div');
+          row.className = 'data-row';
+          row.style.cssText = 'flex-direction: column; align-items: flex-start; gap: 6px; padding: 12px;';
+          row.innerHTML = `
+            <div style="display:flex; justify-content:space-width; width:100%;">
+              <strong>User: ${escapeHTML(appeal.username)}</strong>
+              <span style="color:var(--text-muted); font-size:11px;">[${time}]</span>
+            </div>
+            <div style="font-size:12px; color:#d4d4d4; background:#000; padding:8px; width:100%; border-radius:2px; border:1px solid #262626;">
+              "${escapeHTML(appeal.message)}"
+            </div>
+            <div style="display:flex; gap:8px; margin-top:4px;">
+              <button class="btn-action" onclick="approveAppeal('${escapeHTML(appeal.userId)}', '${appealKey}')">Approve & Unban</button>
+              <button class="btn-danger" onclick="rejectAppeal('${appealKey}')">Reject Appeal</button>
+            </div>
+          `;
+          queueList.appendChild(row);
+        });
+      });
+    }
+
+    function approveAppeal(uid, appealKey) {
+      if (uid && uid !== 'undefined') {
+        db.ref(`users/${uid}`).update({ isBanned: false, banReason: null });
+      }
+      db.ref(`ban_appeals/${appealKey}`).remove();
+      logAction(`Approved ban appeal and restored user access.`);
+      alert("Appeal approved. User unbanned.");
+    }
+
+    function rejectAppeal(appealKey) {
+      db.ref(`ban_appeals/${appealKey}`).remove();
+      logAction(`Rejected ban appeal.`);
+      alert("Appeal rejected and cleared from queue.");
+    }
+
+    function sendBroadcast() {
+      const text = document.getElementById('broadcast-input').value.trim();
+      if (!text) return;
+      db.ref('system/announcement').set({ text: text, timestamp: Date.now() });
+      logAction(`Deployed global announcement: "${text}"`);
+      document.getElementById('broadcast-input').value = '';
+      alert("Announcement deployed.");
+    }
+
+    function clearBroadcast() {
+      db.ref('system/announcement').remove();
+      logAction("Cleared global announcement banner.");
+      alert("Announcement cleared.");
+    }
+
+    function escapeHTML(str) { return str ? str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)) : ''; }
+  </script>
+</body>
+</html>

@@ -12,9 +12,9 @@
   <style>
     :root {
       --bg-core: #000000;
-      --bg-surface: #080808;
+      --bg-surface: #0a0a0a;
       --bg-card: #121212;
-      --bg-input: #030303;
+      --bg-input: #040404;
       --text-main: #f3f4f6;
       --text-muted: #737373;
       --border-subtle: rgba(255, 255, 255, 0.12);
@@ -22,81 +22,104 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; user-select: none; }
-    body { background-color: var(--bg-core); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; }
+    body { background-color: var(--bg-core); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; position: relative; }
+
+    /* AMBIENT BACKGROUND GLOW ANIMATION */
+    .bg-ambient-glow {
+      position: absolute; inset: 0; pointer-events: none; z-index: 0;
+      background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
+      animation: pulseGlow 8s infinite alternate ease-in-out;
+    }
+    @keyframes pulseGlow { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(1.15); opacity: 1; } }
 
     /* BOOT SCREEN */
     #boot-screen {
       position: fixed; inset: 0; background: #000000; z-index: 999999;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      transition: opacity 0.6s ease, visibility 0.6s ease;
+      transition: opacity 0.8s cubic-bezier(0.1, 0.9, 0.2, 1), visibility 0.8s;
     }
-    .boot-logo { font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #fff; text-shadow: 0 0 15px rgba(255,255,255,0.4); }
-    .boot-sub { font-size: 11px; letter-spacing: 3px; color: var(--text-muted); margin-top: 8px; text-transform: uppercase; }
-    .boot-bar { width: 280px; height: 2px; background: #262626; margin-top: 28px; position: relative; overflow: hidden; }
-    .boot-fill { position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: #ffffff; transition: width 0.3s ease; }
+    .boot-logo { font-size: 38px; font-weight: 800; letter-spacing: 8px; color: #fff; text-shadow: 0 0 25px rgba(255,255,255,0.6); animation: bootPulse 2s infinite alternate ease-in-out; }
+    @keyframes bootPulse { 0% { filter: drop-shadow(0 0 2px #fff); } 100% { filter: drop-shadow(0 0 12px #fff); } }
+    .boot-sub { font-size: 11px; letter-spacing: 4px; color: var(--text-muted); margin-top: 10px; text-transform: uppercase; }
+    .boot-bar { width: 320px; height: 2px; background: #171717; margin-top: 32px; position: relative; overflow: hidden; border-radius: 2px; }
+    .boot-fill { position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: #ffffff; box-shadow: 0 0 12px #fff; transition: width 0.3s ease; }
 
     /* PASSCODE GATE */
     #passcode-gate {
-      position: fixed; inset: 0; background: #000000; z-index: 99999;
-      display: flex; align-items: center; justify-content: center;
+      position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 99999;
+      display: flex; align-items: center; justify-content: center; backdrop-filter: blur(12px);
+      animation: fadeInGate 0.5s ease forwards;
     }
+    @keyframes fadeInGate { from { opacity: 0; } to { opacity: 1; } }
     .gate-card {
-      background: var(--bg-surface); width: 420px; padding: 36px; border-radius: 4px;
-      border: 1px solid var(--border-subtle); box-shadow: 0 0 30px rgba(0,0,0,0.9);
-      display: flex; flex-direction: column; gap: 18px; text-align: center;
+      background: var(--bg-surface); width: 420px; padding: 40px; border-radius: 4px;
+      border: 1px solid var(--border-subtle); box-shadow: 0 0 50px rgba(0,0,0,0.9);
+      display: flex; flex-direction: column; gap: 20px; text-align: center; position: relative; z-index: 10;
+      animation: slideGate 0.4s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
     }
-    .gate-card h2 { font-size: 18px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+    @keyframes slideGate { from { transform: translateY(15px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .gate-card h2 { font-size: 18px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; }
     .gate-card p { font-size: 12px; color: var(--text-muted); }
-    .gate-input { background: var(--bg-input); border: 1px solid var(--border-subtle); padding: 12px; border-radius: 2px; color: #fff; font-size: 16px; text-align: center; outline: none; letter-spacing: 3px; }
-    .gate-input:focus { border-color: #fff; }
-    .gate-btn { background: #fff; color: #000; border: none; padding: 12px; border-radius: 2px; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-size: 12px; }
+    .gate-input { background: var(--bg-input); border: 1px solid var(--border-subtle); padding: 14px; border-radius: 2px; color: #fff; font-size: 18px; text-align: center; outline: none; letter-spacing: 5px; transition: all 0.2s; }
+    .gate-input:focus { border-color: #fff; box-shadow: 0 0 15px rgba(255,255,255,0.2); }
+    .gate-btn { background: #fff; color: #000; border: none; padding: 14px; border-radius: 2px; font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-size: 12px; transition: all 0.2s; }
+    .gate-btn:hover { box-shadow: 0 0 20px rgba(255,255,255,0.4); transform: translateY(-1px); }
 
     /* DASHBOARD LAYOUT */
-    .dashboard-layout { display: flex; width: 100vw; height: 100vh; }
+    .dashboard-layout { display: flex; width: 100vw; height: 100vh; position: relative; z-index: 1; }
     
     /* SIDEBAR */
     .nav-sidebar { width: 260px; background: var(--bg-surface); border-right: 1px solid var(--border-subtle); display: flex; flex-direction: column; padding: 20px 12px; gap: 12px; flex-shrink: 0; }
     .nav-header { font-size: 14px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; padding: 0 8px; letter-spacing: 1px; }
     .nav-menu { display: flex; flex-direction: column; gap: 4px; }
-    .nav-btn { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 2px; color: var(--text-muted); cursor: pointer; font-size: 12px; font-weight: 600; border: 1px solid transparent; transition: all 0.15s; letter-spacing: 0.5px; }
-    .nav-btn:hover, .nav-btn.active { background: var(--bg-card); color: #fff; border-color: var(--border-subtle); }
-    .nav-btn.active { color: #fff; border-left: 2px solid #fff; background: var(--bg-card); }
+    .nav-btn { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 2px; color: var(--text-muted); cursor: pointer; font-size: 12px; font-weight: 600; border: 1px solid transparent; transition: all 0.2s cubic-bezier(0.1, 0.9, 0.2, 1); letter-spacing: 0.5px; }
+    .nav-btn:hover { background: var(--bg-card); color: #fff; border-color: var(--border-subtle); transform: translateX(3px); }
+    .nav-btn.active { color: #fff; border-left: 3px solid #fff; background: var(--bg-card); transform: translateX(3px); box-shadow: inset 0 0 15px rgba(255,255,255,0.05); }
 
     /* VIEWPORT */
     .main-viewport { flex: 1; background: var(--bg-core); display: flex; flex-direction: column; overflow: hidden; }
     .viewport-header { height: 56px; padding: 0 24px; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; background: var(--bg-surface); }
     .viewport-title { font-size: 14px; font-weight: 700; color: #fff; letter-spacing: 1px; text-transform: uppercase; }
 
-    .content-section { display: none; flex: 1; padding: 24px; overflow-y: auto; flex-direction: column; gap: 16px; }
+    .content-section { display: none; flex: 1; padding: 24px; overflow-y: auto; flex-direction: column; gap: 16px; animation: fadeInSection 0.3s cubic-bezier(0.1, 0.9, 0.2, 1) forwards; }
+    @keyframes fadeInSection { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
     .content-section.active { display: flex; }
 
-    .panel-card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+    .panel-card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 20px; display: flex; flex-direction: column; gap: 14px; transition: border-color 0.2s; }
+    .panel-card:hover { border-color: rgba(255,255,255,0.25); }
     .panel-card h3 { font-size: 13px; color: #fff; font-weight: 700; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 1px; }
 
     /* CHAT BOX */
     .chat-box { flex: 1; background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: 2px; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; min-height: 280px; }
-    .chat-msg { display: flex; flex-direction: column; gap: 2px; background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 2px; border: 1px solid rgba(255,255,255,0.05); }
+    .chat-box::-webkit-scrollbar { width: 4px; }
+    .chat-box::-webkit-scrollbar-thumb { background: #262626; border-radius: 2px; }
+    .chat-msg { display: flex; flex-direction: column; gap: 2px; background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 2px; border: 1px solid rgba(255,255,255,0.05); animation: slideMsg 0.2s ease forwards; }
+    @keyframes slideMsg { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
     .chat-author { font-weight: 600; font-size: 11px; color: #fff; display: flex; justify-content: space-between; }
 
     /* INPUTS & BUTTONS */
-    input[type="text"], textarea, select { background: var(--bg-input); border: 1px solid var(--border-subtle); padding: 10px 12px; border-radius: 2px; color: #fff; outline: none; font-size: 12px; }
-    input:focus, select:focus { border-color: #fff; }
-    .btn-action { background: #fff; color: #000; border: none; padding: 9px 16px; border-radius: 2px; font-weight: 700; cursor: pointer; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
-    .btn-action:hover { opacity: 0.85; }
-    .btn-danger { background: transparent; color: #fff; border: 1px solid #fff; padding: 8px 14px; border-radius: 2px; font-weight: 700; cursor: pointer; font-size: 11px; text-transform: uppercase; }
-    .btn-danger:hover { background: #fff; color: #000; }
+    input[type="text"], textarea, select { background: var(--bg-input); border: 1px solid var(--border-subtle); padding: 10px 12px; border-radius: 2px; color: #fff; outline: none; font-size: 12px; transition: all 0.2s; }
+    input:focus, select:focus, textarea:focus { border-color: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.15); }
+    .btn-action { background: #fff; color: #000; border: none; padding: 9px 16px; border-radius: 2px; font-weight: 700; cursor: pointer; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s; }
+    .btn-action:hover { opacity: 0.85; box-shadow: 0 0 12px rgba(255,255,255,0.3); transform: translateY(-1px); }
+    .btn-danger { background: transparent; color: #fff; border: 1px solid #fff; padding: 8px 14px; border-radius: 2px; font-weight: 700; cursor: pointer; font-size: 11px; text-transform: uppercase; transition: all 0.2s; }
+    .btn-danger:hover { background: #fff; color: #000; box-shadow: 0 0 12px rgba(255,255,255,0.3); transform: translateY(-1px); }
 
     /* DATA ROWS */
-    .data-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: 2px; font-size: 12px; }
-    .admin-id-tag { font-size: 10px; background: #262626; color: #a3a3a3; padding: 2px 6px; border-radius: 2px; }
+    .data-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: 2px; font-size: 12px; transition: all 0.2s; }
+    .data-row:hover { border-color: rgba(255,255,255,0.3); transform: translateX(2px); }
+    .admin-id-tag { font-size: 10px; background: #171717; color: #a3a3a3; padding: 2px 6px; border-radius: 2px; border: 1px solid #262626; }
   </style>
 </head>
 <body>
 
+  <!-- AMBIENT GLOW -->
+  <div class="bg-ambient-glow"></div>
+
   <!-- BOOT SCREEN -->
   <div id="boot-screen">
     <div class="boot-logo">THE EYE</div>
-    <div class="boot-sub">Secure Oversight Terminal v13.0</div>
+    <div class="boot-sub">Sovereign Oversight Terminal v14.0 // Animated Core</div>
     <div class="boot-bar"><div class="boot-fill" id="boot-fill"></div></div>
   </div>
 
@@ -147,7 +170,7 @@
         </div>
       </div>
 
-      <!-- 2. USER ROSTER & INSTA-BAN (NO PASSWORDS EXPOSED) -->
+      <!-- 2. USER ROSTER & INSTA-BAN -->
       <div class="content-section" id="sec-user-governance">
         <div class="panel-card">
           <h3>Active User Roster & Insta-Ban Engine</h3>
@@ -220,9 +243,9 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       const fill = document.getElementById('boot-fill');
-      setTimeout(() => { fill.style.width = '40%'; }, 200);
-      setTimeout(() => { fill.style.width = '80%'; }, 450);
-      setTimeout(() => { fill.style.width = '100%'; }, 700);
+      setTimeout(() => { fill.style.width = '45%'; }, 200);
+      setTimeout(() => { fill.style.width = '85%'; }, 500);
+      setTimeout(() => { fill.style.width = '100%'; }, 750);
 
       setTimeout(() => {
         const boot = document.getElementById('boot-screen');
@@ -230,14 +253,17 @@
         setTimeout(() => {
           boot.style.display = 'none';
           document.getElementById('passcode-gate').style.display = 'flex';
-        }, 600);
-      }, 950);
+        }, 800);
+      }, 1000);
     });
 
     function unlockTerminal() {
       const code = document.getElementById('gate-passcode-input').value.trim();
       if (code === '9999' || code === 'EYE101') {
-        document.getElementById('passcode-gate').style.display = 'none';
+        document.getElementById('passcode-gate').style.opacity = '0';
+        setTimeout(() => {
+          document.getElementById('passcode-gate').style.display = 'none';
+        }, 400);
         
         let storedId = localStorage.getItem('eye_admin_id');
         if (!storedId) {
@@ -327,7 +353,7 @@
           const log = c.val();
           const time = new Date(log.timestamp).toLocaleTimeString();
           const div = document.createElement('div');
-          div.style.cssText = 'padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:11px;';
+          div.style.cssText = 'padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:11px; animation: slideMsg 0.2s ease forwards;';
           div.innerHTML = `<span style="color:var(--text-muted);">[${time}]</span> <strong style="color:#fff;">${escapeHTML(log.adminName)}</strong> <span class="admin-id-tag">${escapeHTML(log.adminId)}</span>: ${escapeHTML(log.action)}`;
           box.appendChild(div);
         });
@@ -335,7 +361,6 @@
       });
     }
 
-    // USER ROSTER & SECURE INSTA-BAN
     function loadUsers() {
       const list = document.getElementById('admin-users-list');
       db.ref('users').on('value', snap => {
@@ -376,15 +401,12 @@
 
         if (newStatus) {
           logAction(`EXECUTE INSTA-BAN on user ${uname} (UID: ${uid})`);
-          alert(`INSTA-BAN executed for ${uname}. Live disconnect signal dispatched.`);
         } else {
           logAction(`Lifted suspension for user ${uname} (UID: ${uid})`);
-          alert(`Suspension lifted for ${uname}.`);
         }
       });
     }
 
-    // MANUAL BAN
     function executeManualBan() {
       const username = document.getElementById('manual-ban-username').value.trim();
       const reason = document.getElementById('manual-ban-reason').value.trim();
@@ -415,7 +437,6 @@
       });
     }
 
-    // APPEALS CENTER QUEUE
     function loadAppeals() {
       const queueList = document.getElementById('appeals-queue-list');
       db.ref('ban_appeals').on('value', snap => {
@@ -430,9 +451,9 @@
           const time = new Date(appeal.timestamp).toLocaleTimeString();
           const row = document.createElement('div');
           row.className = 'data-row';
-          row.style.cssText = 'flex-direction: column; align-items: flex-start; gap: 6px; padding: 12px;';
+          row.style.cssText = 'flex-direction: column; align-items: flex-start; gap: 6px; padding: 12px; animation: slideMsg 0.2s ease forwards;';
           row.innerHTML = `
-            <div style="display:flex; justify-content:space-width; width:100%;">
+            <div style="display:flex; justify-content:space-between; width:100%;">
               <strong>User: ${escapeHTML(appeal.username)}</strong>
               <span style="color:var(--text-muted); font-size:11px;">[${time}]</span>
             </div>
@@ -451,17 +472,15 @@
 
     function approveAppeal(uid, appealKey) {
       if (uid && uid !== 'undefined') {
-        db.ref(`users/${uid}`).update({ isBanned: false, banReason: null });
+        db.ref(`users/${uid}`).update({ isBanned: false, banReason: null, kickSignal: null });
       }
       db.ref(`ban_appeals/${appealKey}`).remove();
       logAction(`Approved ban appeal and restored user access.`);
-      alert("Appeal approved. User unbanned.");
     }
 
     function rejectAppeal(appealKey) {
       db.ref(`ban_appeals/${appealKey}`).remove();
       logAction(`Rejected ban appeal.`);
-      alert("Appeal rejected and cleared from queue.");
     }
 
     function sendBroadcast() {
@@ -470,13 +489,11 @@
       db.ref('system/announcement').set({ text: text, timestamp: Date.now() });
       logAction(`Deployed global announcement: "${text}"`);
       document.getElementById('broadcast-input').value = '';
-      alert("Announcement deployed.");
     }
 
     function clearBroadcast() {
       db.ref('system/announcement').remove();
       logAction("Cleared global announcement banner.");
-      alert("Announcement cleared.");
     }
 
     function escapeHTML(str) { return str ? str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)) : ''; }
